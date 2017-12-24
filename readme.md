@@ -7,4 +7,5 @@ This file is some scripts that can voxelize the `*.ply` 3D model.
 ```
 pyassimp 3
 pyflann
+numpy
 ```
