@@ -8,7 +8,6 @@ import os
 
 FLAGS = None
 
-
 def main( ):
     """ the main program entrence
     """
