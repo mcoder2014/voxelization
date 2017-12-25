@@ -19,7 +19,7 @@ def voxelization(filename,
         And export in two formats.
 
         numpy formats: just use numpy import, a array has shape (192, 192, 200)
-        json format: a numpy format reshape to (1,) and attribute name is 'array'
+        json format: a numpy format reshape to (-1,) and attribute name is 'array'
     Args:
         filename:   a relative file path to the *.ply file
         outputJsonPath: a relative floder path to save voxel in json format
@@ -43,7 +43,26 @@ def voxelization(filename,
     voxel = np.zeros( shape = (voxel_width, voxel_height, voxel_length),
         dtype = np.float32)         # Creat a zeros ndarray
 
-    boundingbox = getBoundingBox(scene)    # get the bounding box of scene
+    boundingbox = _getBoundingBox(scene)    # get the bounding box of scene
+
+    # calculate each voxel's edge length
+    center = np.array( [ (boundingbox[0] + boundingbox[3]) / 2,
+                        (boundingbox[1] + boundingbox[4]) / 2,
+                        (boundingbox[2] + boundingbox[5]) /2] )
+
+    x_edge = (boundingbox[0] - boundingbox[3]) / voxel_width
+    y_edge = (boundingbox[1] - boundingbox[4]) / voxel_height
+    z_edge = (boundingbox[2] - boundingbox[5]) / voxel_length
+    edge = max(x_edge, y_edge, z_edge)      # use the max as edge
+    print ("x_edge: ", x_edge, "\ny_edge: ", y_edge,
+        "\nz_edge: ", z_edge, "\nedge: ", edge)
+
+    # set the (voxel_width // 2, voxel_height // 2, voxel_length // 2)'s
+    # position is center. So we can get other voxel box's voxel box.
+    # At here, we calculate the start voxel box's center position.
+    start = center - np.array([voxel_width // 2 * edge,
+        voxel_height // 2 * edge, voxel_length // 2 * edge])
+
 
 def _getBoundingBox(scene):
     """give a assimp scene, get it bounding box
@@ -76,12 +95,13 @@ def _getBoundingBox(scene):
 
     return (xmax, ymax, zmax, xmin, ymin, zmin)
 
-def _meshVoxel(boundingbox, mesh, voxel):
+def _meshVoxel(startpoint, edge, mesh, voxel):
     """ mesh voxel function
     change numpy.ndarray's 0 to 1 acounding to mesh and scene'bounding box
     Args:
-        boundingbox: bounding box
+        startpoint: numpy.ndarray with shape of (3,)
         mesh: pyassimp mesh
         voxel: numpy.ndarray
     """
-    pass
+    vertices = mesh.vertices    #  np.array n x 3
+    flann = pyflann.FLANN()     # create a FLANN object

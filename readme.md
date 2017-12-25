@@ -33,3 +33,15 @@ For more convenient usage, it export a json file. Just reshape the numpy array t
 - [numpy](http://www.numpy.org/)
 - [python 2.7](https://www.python.org/downloads/)
 - [pyflann](https://github.com/primetang/pyflann)
+
+### PyAssimp
+PyAssimp can import and export many formats of 3-D models, very useful.
+
+### numpy
+NumPy is the fundamental package for scientific computing with Python.
+
+### PyFlann
+FLANN (Fast Library for Approximate Nearest Neighbors) is a library for
+performing fast approximate nearest neighbor searches. FLANN is written in
+the C++ programming language. FLANN can be easily used in many contexts
+through the C, MATLAB and Python bindings provided with the library.
