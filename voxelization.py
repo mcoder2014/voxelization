@@ -25,6 +25,9 @@ def voxelization(filename,
         outputJsonPath: a relative floder path to save voxel in json format
         outputNumpyPath: a relative floder path to save voxel in numpy format
         size: a tuple with 3 integer, default is (192, 192, 200)
+    Return:
+        None: if no voxel has calculated, return None
+        numpy.ndarray:  if the voxel has been calculated, return ndarray
     """
     if len(size) != 3:
         print("The argument \" size \" should has three integer")
@@ -63,6 +66,13 @@ def voxelization(filename,
     start = center - np.array([voxel_width // 2 * edge,
         voxel_height // 2 * edge, voxel_length // 2 * edge])
 
+    for index in range(meshes_count):
+        _meshVoxel(start, edge, scene.meshes[index], str(index))
+    print("calculate all meshes voxel finished!")
+
+    # save voxel files
+    _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel)
+    return voxel
 
 def _getBoundingBox(scene):
     """give a assimp scene, get it bounding box
@@ -93,15 +103,55 @@ def _getBoundingBox(scene):
         if ymin_t < ymin:   ymin = ymin_t
         if zmin_t < zmin:   zmin = zmin_t
 
+    print("Bounding box: ",xmax, ymax, zmax, xmin, ymin, zmin)
     return (xmax, ymax, zmax, xmin, ymin, zmin)
 
-def _meshVoxel(startpoint, edge, mesh, voxel):
+def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
     """ mesh voxel function
     change numpy.ndarray's 0 to 1 acounding to mesh and scene'bounding box
     Args:
         startpoint: numpy.ndarray with shape of (3,)
+        edge: the voxel box's edge length
         mesh: pyassimp mesh
         voxel: numpy.ndarray
+        str: the string you want to split each mesh
     """
     vertices = mesh.vertices    #  np.array n x 3
+
+    print("The mesh ", str," has vertices: ", vertices.shape)
+
+    # KDtree
     flann = pyflann.FLANN()     # create a FLANN object
+    params = flann.build_index(vertices, algorithm = "kdtree", trees = 4)
+
+    # iterate to calculate the voxel value
+    # if there is a point close to the center, there is 1, otherwise, no changes
+    width, height, length = voxel.shape
+    for x in range(width):
+        for y in range(height):
+            for z in range(length):
+                # for each voxel center
+                voxel_center = np.array([[
+                    startpoint[0] + x * edge,
+                    startpoint[1] + y * edge,
+                    startpoint[2] + z * edge]],dtype = np.float32)
+                result, dists = flann.nn_index(voxel_center, 1,
+                    checks = params["checks"])
+                index = result[0,0]
+                vertex = vertices[index,:]  # get nearest neighbor
+                distance = np.sqrt(((vertx - voxel_center) ** 2).sum())
+                if distance < edge/2:
+                    voxel[x,y,z] = 1
+
+    print("The mesh", str," process successfully.")
+
+def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
+    """ save voxel
+        Save the voxel into file.
+    Args:
+        filename:   the filename of import.
+        outputJsonPath: path to save json.
+        outputNumpyPath: path to save numpy.
+        voxel: numpy.ndarray
+    """
+    pass
