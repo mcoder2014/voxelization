@@ -168,7 +168,7 @@ def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
 
     # save json
     array = voxel.reshape(-1,)
-    json_str = json.dumps(array)
+    json_str = json.dumps(array.tolist())
     json_file = open(outputJsonPath + filename + ".json", "w+")
     json_file.write(json_str)
     json_file.close()
