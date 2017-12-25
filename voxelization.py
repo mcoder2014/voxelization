@@ -43,24 +43,45 @@ def voxelization(filename,
     voxel = np.zeros( shape = (voxel_width, voxel_height, voxel_length),
         dtype = np.float32)         # Creat a zeros ndarray
 
-    boundingbox = _getBoundingBox(scene)    # get the bounding box of scene
+    boundingbox = getBoundingBox(scene)    # get the bounding box of scene
 
-    def _getBoundingBox(scene):
-        """give a assimp scene, get it bounding box
+def _getBoundingBox(scene):
+    """give a assimp scene, get it bounding box
             It will bounding all meshes in the mesh.
         Args:
             scene: assimp scene
         Returns:
-            bounding box
-        """
-        pass
+            bounding box ( xmax, ymax, zmax, xmin, ymin, zmin )
+            6 num represent 6 faces.
+    """
+    if len(scene.meshes) == 0:
+        print("scene's meshes attribute has no mesh")
+        return (0,0,0,0,0,0)
 
-    def _meshVoxel(boundingbox, mesh, voxel):
-        """ mesh voxel function
-        change numpy.ndarray's 0 to 1 acounding to mesh and scene'bounding box
-        Args:
-            boundingbox: bounding box
-            mesh: pyassimp mesh
-            voxel: numpy.ndarray
-        """
-        pass
+    mesh_1 = scene.meshes[0]
+    xmax, ymax, zmax = np.amax( mesh_1.vertices, axis = 0 )
+    xmin, ymin, zmin = np.amin( mesh_1.vertices, axis = 0 )
+
+    for index in range(1,len(scene.meshes)):
+        mesh_t = scene.meshes[index]
+        xmax_t, ymax_t, zmax_t = np.amax( mesh_t.vertices, axis = 0)
+        xmin_t, ymin_t, zmin_t = np.amin( mesh_t.vertices, axis = 0)
+
+        if xmax_t > xmax:   xmax = xmax_t
+        if ymax_t > ymax:   ymax = ymax_t
+        if zmax_t > zmax:   zmax = zmax_t
+        if xmin_t < xmin:   xmin = xmin_t
+        if ymin_t < ymin:   ymin = ymin_t
+        if zmin_t < zmin:   zmin = zmin_t
+
+    return (xmax, ymax, zmax, xmin, ymin, zmin)
+
+def _meshVoxel(boundingbox, mesh, voxel):
+    """ mesh voxel function
+    change numpy.ndarray's 0 to 1 acounding to mesh and scene'bounding box
+    Args:
+        boundingbox: bounding box
+        mesh: pyassimp mesh
+        voxel: numpy.ndarray
+    """
+    pass
