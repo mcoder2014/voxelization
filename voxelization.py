@@ -9,6 +9,9 @@ Home Page: http://mcoder.cc
 import pyassimp
 import numpy as np
 import operator
+import pyflann
+import json
+import time
 
 def voxelization(filename,
     outputJsonPath = '../voxel_json/',
@@ -24,6 +27,7 @@ def voxelization(filename,
         filename:   a relative file path to the *.ply file
         outputJsonPath: a relative floder path to save voxel in json format
         outputNumpyPath: a relative floder path to save voxel in numpy format
+            Note: The directory should already be created. Or it will throw IOError
         size: a tuple with 3 integer, default is (192, 192, 200)
     Return:
         None: if no voxel has calculated, return None
@@ -67,7 +71,7 @@ def voxelization(filename,
         voxel_height // 2 * edge, voxel_length // 2 * edge])
 
     for index in range(meshes_count):
-        _meshVoxel(start, edge, scene.meshes[index], str(index))
+        _meshVoxel(start, edge, scene.meshes[index], voxel, str(index))
     print("calculate all meshes voxel finished!")
 
     # save voxel files
@@ -127,6 +131,8 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
     # iterate to calculate the voxel value
     # if there is a point close to the center, there is 1, otherwise, no changes
     width, height, length = voxel.shape
+    start_time = time.time()
+
     for x in range(width):
         for y in range(height):
             for z in range(length):
@@ -137,13 +143,15 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
                     startpoint[2] + z * edge]],dtype = np.float32)
                 result, dists = flann.nn_index(voxel_center, 1,
                     checks = params["checks"])
-                index = result[0,0]
+                index = result[0]
                 vertex = vertices[index,:]  # get nearest neighbor
-                distance = np.sqrt(((vertx - voxel_center) ** 2).sum())
+                distance = np.sqrt(((vertex - voxel_center) ** 2).sum())
                 if distance < edge/2:
                     voxel[x,y,z] = 1
+        #print("x: ", x)
 
-    print("The mesh", str," process successfully.")
+    print("The mesh", str," process successfully in ",
+        time.time() - start_time, "s")
 
 def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
     """ save voxel
@@ -154,4 +162,13 @@ def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
         outputNumpyPath: path to save numpy.
         voxel: numpy.ndarray
     """
-    pass
+    filename = filename[0:filename.rfind('.')]  # cut the format end
+    # save numpy
+    voxel.tofile(outputNumpyPath + filename + ".numpy")
+
+    # save json
+    array = voxel.reshape(-1,)
+    json_str = json.dumps(array)
+    json_file = open(outputJsonPath + filename + ".json", "w+")
+    json_file.write(json_str)
+    json_file.close()
