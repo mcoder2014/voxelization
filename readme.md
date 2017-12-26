@@ -61,7 +61,9 @@ array([[[0, 0, 0, ..., 0, 0, 0],
 ## Show
 There is some works of the app. Those screenshot pictures are using [viewvox](http://www.patrickmin.com/viewvox/) Application.
 
+![ply3]( imps/ply3.png )
 ![view3]( imps/view3.png )
+![ply4]( imps/ply4.png )
 ![view4]( imps/view4.png )
 
 
