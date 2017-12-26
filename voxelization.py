@@ -48,7 +48,8 @@ def voxelization(filename,
     voxel_length = size[2]
 
     voxel = np.zeros( shape = (voxel_width, voxel_height, voxel_length),
-        dtype = np.float32)         # Creat a zeros ndarray
+        dtype = np.int8)         # Creat a zeros ndarray
+    print("Program will create voxel in shape", size)
 
     boundingbox = _getBoundingBox(scene)    # get the bounding box of scene
 
@@ -148,7 +149,6 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
                 distance = np.sqrt(((vertex - voxel_center) ** 2).sum())
                 if distance < edge/2:
                     voxel[x,y,z] = 1
-        #print("x: ", x)
 
     print("The mesh", str," process successfully in ",
         time.time() - start_time, "s")
@@ -163,12 +163,14 @@ def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
         voxel: numpy.ndarray
     """
     filename = filename[0:filename.rfind('.')]  # cut the format end
-    # save numpy
-    voxel.tofile(outputNumpyPath + filename + ".numpy")
+    # save npy
+    #voxel.tofile(outputNumpyPath + filename + ".numpy")
+    np.save(outputNumpyPath + filename + ".npy", voxel)
 
     # save json
     array = voxel.reshape(-1,)
     json_str = json.dumps(array.tolist())
     json_file = open(outputJsonPath + filename + ".json", "w+")
+    json_file.truncate()            # 清空当前文件的内容
     json_file.write(json_str)
     json_file.close()

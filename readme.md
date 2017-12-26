@@ -16,16 +16,18 @@ DirectX X ( .x ), AC3D ( .ac ), Milkshape 3D ( .ms3d ), TrueSpace ( .cob,.scn )
 ## numpy
 A numpy array with shape of you appointed.Example: you give a vexel size of (100, 100, 100).
 It will return a numpy array with shape (100, 100, 100).
+Filename: `imagename.npy`
+
+When you need to import it, using `numpy.load(filename)`.
 
 ## JSON
 For more convenient usage, it export a json file. Just reshape the numpy array to
 (-1, ) . As it shown below:
 
 ```JSON
-{
-    "array": [0,1,0,1]
-}
+    '[0,1,0,1]'
 ```
+Filename: `iamgename.json`
 
 ## Requires
 
