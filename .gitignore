@@ -1,5 +1,10 @@
 # ply model
-*.ply
+
+# model files or export files
+ply_model/
+voxel_binvox/
+voxel_json/
+voxel_numpy/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

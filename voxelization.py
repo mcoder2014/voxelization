@@ -11,11 +11,14 @@ import numpy as np
 import operator
 import pyflann
 import json
+import binvox_rw
 import time
 
-def voxelization(filename,
+def voxelization(
+    filename,
     outputJsonPath = '../voxel_json/',
     outputNumpyPath = '../voxel_numpy/',
+    outputBinvoxPath = '../voxel_binvox/',
     size = (192,192,200)):
     """ function voxelization
         This function load a *.ply model file, and convert it into a voxel.
@@ -28,6 +31,7 @@ def voxelization(filename,
         outputJsonPath: a relative floder path to save voxel in json format
         outputNumpyPath: a relative floder path to save voxel in numpy format
             Note: The directory should already be created. Or it will throw IOError
+        outputBinvoxPath: a relative floder path to save in binvox format
         size: a tuple with 3 integer, default is (192, 192, 200)
     Return:
         None: if no voxel has calculated, return None
@@ -49,6 +53,7 @@ def voxelization(filename,
 
     voxel = np.zeros( shape = (voxel_width, voxel_height, voxel_length),
         dtype = np.int8)         # Creat a zeros ndarray
+    print("Program is manipulating model: ", filename)
     print("Program will create voxel in shape", size)
 
     boundingbox = _getBoundingBox(scene)    # get the bounding box of scene
@@ -65,18 +70,22 @@ def voxelization(filename,
     print ("x_edge: ", x_edge, "\ny_edge: ", y_edge,
         "\nz_edge: ", z_edge, "\nedge: ", edge)
 
+
     # set the (voxel_width // 2, voxel_height // 2, voxel_length // 2)'s
     # position is center. So we can get other voxel box's voxel box.
     # At here, we calculate the start voxel box's center position.
     start = center - np.array([voxel_width // 2 * edge,
         voxel_height // 2 * edge, voxel_length // 2 * edge])
 
+    print("center", center, "start", start)
+
     for index in range(meshes_count):
         _meshVoxel(start, edge, scene.meshes[index], voxel, str(index))
     print("calculate all meshes voxel finished!")
 
     # save voxel files
-    _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel)
+    _saveVoxel(filename,
+        outputJsonPath, outputNumpyPath, outputBinvoxPath, voxel)
     return voxel
 
 def _getBoundingBox(scene):
@@ -133,6 +142,7 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
     # if there is a point close to the center, there is 1, otherwise, no changes
     width, height, length = voxel.shape
     start_time = time.time()
+    landmark = edge
 
     for x in range(width):
         for y in range(height):
@@ -147,25 +157,41 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
                 index = result[0]
                 vertex = vertices[index,:]  # get nearest neighbor
                 distance = np.sqrt(((vertex - voxel_center) ** 2).sum())
-                if distance < edge/2:
+
+                if distance <= landmark:
                     voxel[x,y,z] = 1
 
-    print("The mesh", str," process successfully in ",
-        time.time() - start_time, "s")
+    print("The mesh" + str +" process successfully in " ,
+        (time.time() - start_time), " s")
 
-def _saveVoxel(filename, outputJsonPath, outputNumpyPath, voxel):
+def _saveVoxel(filename,
+    outputJsonPath, outputNumpyPath, outputBinvoxPath, voxel):
     """ save voxel
         Save the voxel into file.
     Args:
         filename:   the filename of import.
         outputJsonPath: path to save json.
         outputNumpyPath: path to save numpy.
+        outputBinvoxPath: path to save binvox.
         voxel: numpy.ndarray
     """
     filename = filename[0:filename.rfind('.')]  # cut the format end
     # save npy
     #voxel.tofile(outputNumpyPath + filename + ".numpy")
     np.save(outputNumpyPath + filename + ".npy", voxel)
+
+    # save binvox
+    bool_voxel = voxel.astype(np.bool)
+    binvox = binvox_rw.Voxels(
+        data = bool_voxel,
+        dims = list(voxel.shape),
+        translate = [0.0, 0.0, 0.0],
+        scale = 1.0,
+        axis_order = 'xzy')
+    fp = open(outputBinvoxPath + filename + ".binvox", 'wb+')
+    fp.truncate()
+    binvox.write(fp)
+    fp.close()
 
     # save json
     array = voxel.reshape(-1,)
