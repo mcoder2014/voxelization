@@ -175,7 +175,11 @@ def _saveVoxel(filename,
         outputBinvoxPath: path to save binvox.
         voxel: numpy.ndarray
     """
-    filename = filename[0:filename.rfind('.')]  # cut the format end
+    startPoint = 0
+    if filename.rfind("/") != -1:
+        startPoint = filename.rfind("/") + 1
+
+    filename = filename[startPoint:filename.rfind('.')]  # cut the format end
     # save npy
     #voxel.tofile(outputNumpyPath + filename + ".numpy")
     np.save(outputNumpyPath + filename + ".npy", voxel)
