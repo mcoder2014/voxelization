@@ -42,7 +42,7 @@ Using this format, you can easily got the result in eyes with [viewvox]().
 - [python 2.7](https://www.python.org/downloads/)
 - [pyflann](https://github.com/primetang/pyflann)
 
-## Useage
+## Usage
 
 ```
 >>> import voxelization
@@ -57,6 +57,8 @@ array([[[0, 0, 0, ..., 0, 0, 0],
         [0, 0, 0, ..., 0, 0, 0]]], dtype=int8)
 >>>
 ```
+
+The file `run.sh` is the usage of the script `batch_voxelization.py`. You can change your arguments, and run it just use command `bash run.sh` in linux.
 
 ## Show
 There is some works of the app. Those screenshot pictures are using [viewvox](http://www.patrickmin.com/viewvox/) Application.

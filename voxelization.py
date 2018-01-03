@@ -13,12 +13,14 @@ import pyflann
 import json
 import binvox_rw
 import time
+import os
 
 def voxelization(
     filename,
     outputJsonPath = '../voxel_json/',
     outputNumpyPath = '../voxel_numpy/',
     outputBinvoxPath = '../voxel_binvox/',
+    coef = 1.0,
     size = (192,192,200)):
     """ function voxelization
         This function load a *.ply model file, and convert it into a voxel.
@@ -32,6 +34,7 @@ def voxelization(
         outputNumpyPath: a relative floder path to save voxel in numpy format
             Note: The directory should already be created. Or it will throw IOError
         outputBinvoxPath: a relative floder path to save in binvox format
+        coef: used to judge if the point is 1 or 0
         size: a tuple with 3 integer, default is (192, 192, 200)
     Return:
         None: if no voxel has calculated, return None
@@ -67,9 +70,8 @@ def voxelization(
     y_edge = (boundingbox[1] - boundingbox[4]) / voxel_height
     z_edge = (boundingbox[2] - boundingbox[5]) / voxel_length
     edge = max(x_edge, y_edge, z_edge)      # use the max as edge
-    print ("x_edge: ", x_edge, "\ny_edge: ", y_edge,
-        "\nz_edge: ", z_edge, "\nedge: ", edge)
-
+    print ("x_edge: {0}, y_edge: {1}, z_edge: {2}, edge: {3}".format(
+        x_edge, y_edge, z_edge, edge))
 
     # set the (voxel_width // 2, voxel_height // 2, voxel_length // 2)'s
     # position is center. So we can get other voxel box's voxel box.
@@ -77,10 +79,11 @@ def voxelization(
     start = center - np.array([voxel_width // 2 * edge,
         voxel_height // 2 * edge, voxel_length // 2 * edge])
 
-    print("center", center, "start", start)
+    #print("center", center, "start", start)
+    print("center: {0}, staet: {1}".format(center, start))
 
     for index in range(meshes_count):
-        _meshVoxel(start, edge, scene.meshes[index], voxel, str(index))
+        _meshVoxel(start, edge, scene.meshes[index], voxel, coef, str(index))
     print("calculate all meshes voxel finished!")
 
     # save voxel files
@@ -117,10 +120,12 @@ def _getBoundingBox(scene):
         if ymin_t < ymin:   ymin = ymin_t
         if zmin_t < zmin:   zmin = zmin_t
 
-    print("Bounding box: ",xmax, ymax, zmax, xmin, ymin, zmin)
+    # print("Bounding box: ",xmax, ymax, zmax, xmin, ymin, zmin)
+    print("Bounding box: xmax: {0}, ymax: {1}, zmax:{2}, xmin: {3}, ymin: {4}, zmin: {5}".format(
+        xmax, ymax, zmax, xmin, ymin, zmin))
     return (xmax, ymax, zmax, xmin, ymin, zmin)
 
-def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
+def _meshVoxel(startpoint, edge, mesh, voxel, coef = 1.0, str = "0"):
     """ mesh voxel function
     change numpy.ndarray's 0 to 1 acounding to mesh and scene'bounding box
     Args:
@@ -128,11 +133,13 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
         edge: the voxel box's edge length
         mesh: pyassimp mesh
         voxel: numpy.ndarray
+        coef: used to judge if this point is 1
         str: the string you want to split each mesh
     """
     vertices = mesh.vertices    #  np.array n x 3
 
-    print("The mesh ", str," has vertices: ", vertices.shape)
+    #print("The mesh ", str," has vertices: ", vertices.shape)
+    print("The mesh {0} has vertices {1}".format(str, vertices.shape))
 
     # KDtree
     flann = pyflann.FLANN()     # create a FLANN object
@@ -142,7 +149,7 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
     # if there is a point close to the center, there is 1, otherwise, no changes
     width, height, length = voxel.shape
     start_time = time.time()
-    landmark = edge
+    landmark = coef * edge
 
     for x in range(width):
         for y in range(height):
@@ -161,8 +168,10 @@ def _meshVoxel(startpoint, edge, mesh, voxel, str = "0"):
                 if distance <= landmark:
                     voxel[x,y,z] = 1
 
-    print("The mesh" + str +" process successfully in " ,
-        (time.time() - start_time), " s")
+#    print("The mesh" + str +" process successfully in " ,
+#        (time.time() - start_time), " s")
+    print("The mesh {0} process successfully in {1}s".format(
+        str, (time.time() - start_time)))
 
 def _saveVoxel(filename,
     outputJsonPath, outputNumpyPath, outputBinvoxPath, voxel):
@@ -182,7 +191,7 @@ def _saveVoxel(filename,
     filename = filename[startPoint:filename.rfind('.')]  # cut the format end
     # save npy
     #voxel.tofile(outputNumpyPath + filename + ".numpy")
-    np.save(outputNumpyPath + filename + ".npy", voxel)
+    np.save(os.path.join( outputNumpyPath, filename ) + ".npy", voxel)
 
     # save binvox
     bool_voxel = voxel.astype(np.bool)
@@ -192,7 +201,7 @@ def _saveVoxel(filename,
         translate = [0.0, 0.0, 0.0],
         scale = 1.0,
         axis_order = 'xzy')
-    fp = open(outputBinvoxPath + filename + ".binvox", 'wb+')
+    fp = open(os.path.join( outputBinvoxPath, filename ) + ".binvox", 'wb+')
     fp.truncate()
     binvox.write(fp)
     fp.close()
@@ -200,7 +209,7 @@ def _saveVoxel(filename,
     # save json
     array = voxel.reshape(-1,)
     json_str = json.dumps(array.tolist())
-    json_file = open(outputJsonPath + filename + ".json", "w+")
+    json_file = open(os.path.join( outputJsonPath, filename ) + ".json", "w+")
     json_file.truncate()            # 清空当前文件的内容
     json_file.write(json_str)
     json_file.close()

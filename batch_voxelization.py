@@ -17,11 +17,7 @@ def main( ):
     """ the main program entrence
     """
 
-    print("data_dir", FLAGS.data_dir)
-    print("json_dir", FLAGS.json_dir)
-    print("numpy_dir", FLAGS.numpy_dir)
-    print("binvox_dir", FLAGS.binvox_dir)
-
+    print(FLAGS)
     filenames = os.listdir(FLAGS.data_dir)  # get the filenames under data_dir
     print(filenames)
 
@@ -47,20 +43,26 @@ def produce( filenames , id):
         filenames: a list of filenames
         id: thread id
     """
-    print("threads", id, filenames, "length", len(filenames))
+    # print("threads", id, filenames, "length", len(filenames))
+    print("threads:{0} ,file {1}, length: {2}".format(
+        id, filenames, len(filenames)))
     length = len(filenames)
     for index in range(length):
         filename = filenames[index]
         if not operator.eq("ply", filename[filename.rfind(".")+1:len(filename)]):
-            print (filename, operator.eq("ply", filename[filename.rfind("."):len(filename)]))
+            #print (filename, operator.eq("ply", filename[filename.rfind("."):len(filename)]))
+            print (filename)
             continue
-        print("work in file", filename, "process bar", index,"/",length)
+        #print("work in file", filename, "process bar", index,"/",length)
+        print("work in file: {0}, Process bar: {1}/{2}".format(
+            filename, index + 1, length ))
         voxelization.voxelization(
             FLAGS.data_dir + filename,
             outputJsonPath = FLAGS.json_dir,
             outputNumpyPath = FLAGS.numpy_dir,
             outputBinvoxPath = FLAGS.binvox_dir,
-            size = (192,192,200))
+            coef = FLAGS.judge_coef,
+            size = (FLAGS.size0, FLAGS.size1, FLAGS.size2))
 
 
 if __name__ == '__main__':
@@ -88,6 +90,30 @@ if __name__ == '__main__':
         type = str,
         default = './voxel_binvox/',
         help = 'the path to save exported binvox files' )
+
+    parser.add_argument(
+        "--judge_coef",
+        type = float,
+        default = 1.0,
+        help = "larger the finger is, thicker the voxel model is" )
+
+    parser.add_argument(
+        '--size0',
+        type = int,
+        default = 192,
+        help = "the first num of size (192, 192, 200)" )
+
+    parser.add_argument(
+        '--size1',
+        type = int,
+        default = 192,
+        help = "the second num of size (192, 192, 200)" )
+
+    parser.add_argument(
+        '--size2',
+        type = int,
+        default = 200,
+        help = "the third num of size (192, 192, 200)" )
 
     FLAGS, unparsed = parser.parse_known_args()
     main()      # run main function
